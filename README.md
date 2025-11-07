@@ -4,6 +4,7 @@
 
 A secure, offline-first web application built with pure JavaScript to help Class Representatives (CRs) manage lab record payments and distribution for their class.
 for a demo refer to https://github.com/mvishnuvardhan2229-dotcom/CR_LAB_RECORD_TRACKER/blob/main/demo1.png?raw=true
+https://github.com/mvishnuvardhan2229-dotcom/CR_LAB_RECORD_TRACKER/blob/main/demo2.png
 
 Live Demo: lab-record-v-maan-1327.netlify.app
 
