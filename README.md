@@ -5,7 +5,8 @@
 A secure, offline-first web application built with pure JavaScript to help Class Representatives (CRs) manage lab record payments and distribution for their class.
 
 Live Demo: lab-record-v-maan-1327.netlify.app
-"""after opening the list it asks for a json file to be upload which holds the data in it.A two demo files(AIML,CSE_A) json files were available in the folder i uploaded whose passwords are AIML@1234 and CSE_A@1234 respectively"""
+
+# """### after opening the list it asks for a json file to be upload which holds the data in it.A two demo files(AIML,CSE_A) json files were available in the folder i uploaded whose passwords are AIML@1234 and CSE_A@1234 respectively ###"""
 
 The Problem
 A Class Representative (CR) was responsible for collecting money and distributing lab records for multiple subjects. Tracking this with spreadsheets or paper was chaotic, error-prone, and not transparent for my classmates.
