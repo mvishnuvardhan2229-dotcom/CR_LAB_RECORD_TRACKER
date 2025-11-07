@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Record Tracker - CR Tool</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Libraries for Excel and Charts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+    	@keyframes changeBackground {
+			    0%   { background-image: url('images/R1.jpeg'); }
+			    20%  { background-image: url('images/R1.jpeg'); }
+			    25%  { background-image: url('images/R2.jpg'); }
+			    45%  { background-image: url('images/R2.jpg'); }
+			    50%  { background-image: url('images/R3.jpg'); }
+			    70%  { background-image: url('images/R3.jpg'); }
+			    75%  { background-image: url('images/R4.jpg'); }
+			    95%  { background-image: url('images/R4.jpg'); }
+			    100% { background-image: url('images/R5.jpg'); }
+					}
+        body {
+	    font-family: 'Inter', sans-serif;
+	    
+	    /* Set animation properties */
+	    animation: changeBackground 40s infinite; /* 40s total duration, loops forever */
+	    
+	    /* Keep these styles to make the images look good */
+	    background-color: #f1f5f9; /* Fallback color */
+	    background-repeat: no-repeat;
+	    background-position: center center;
+	    background-size: cover;
+	    background-attachment: fixed;
+	}
+        .action-btn { transition: all 0.2s ease-in-out; }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px -1px rgb(0 0 0 / 0.1), 0 2px 8px -2px rgb(0 0 0 / 0.1); }
+        .modal-backdrop { transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease, opacity 0.3s ease; }
+        #mainApp, #adminDashboard { display: none; }
+        .status-btn { transition: all 0.2s ease-in-out; border: 1px solid transparent; }
+        .status-btn:hover { transform: scale(1.05); }
+        .duplicate-row { background-color: #fff1f2; }
+        .filter-btn { padding: 0.5rem 1rem; border-radius: 9999px; font-weight: 500; border: 1px solid #e2e8f0;
+        background-color:rgba(255,255,255,0.6); }
+        .filter-btn.active { background-color: #4338ca; color: white; border-color: #4338ca; }
+        .card { background-color: rgba(255, 255, 255, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.2);border-radius: 0.75rem;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07); border: 1px solid #e5e7eb; }
+        .icon-btn { transition: all 0.2s ease; }
+        .icon-btn:hover { background-color: #eef2ff; color: #4338ca; }
+    </style>
+</head>
+<body class="text-slate-700">
+
+    <!-- Load Container -->
+    <div id="authContainer" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-100 to-slate-200">
+        <div class="max-w-md w-full bg-white p-8 rounded-xl shadow-2xl">
+            <h2 class="text-3xl font-bold text-center text-slate-900 mb-2">Welcome</h2>
+            <p class="text-center text-slate-500 mb-6">Please load your class file to begin.</p>
+            <label for="classFileInput" class="w-full text-center cursor-pointer bg-violet-50 text-violet-700 font-semibold py-3 px-4 rounded-lg border-2 border-dashed border-violet-200 hover:bg-violet-100 hover:border-violet-300 transition-colors">
+                <span>Select Class File (.json)</span>
+                <input type="file" id="classFileInput" accept=".json" class="hidden">
+            </label>
+        </div>
+    </div>
+
+<!-- Main App Container (CR View) -->
+ <div id="mainApp" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+  <header class="mb-8">
+   <div class="flex flex-wrap justify-between items-center gap-4">
+     <div>
+        <h1 class="text-4xl font-extrabold text-white text-shadow bg-slate-900/70 px-4 py-2 rounded-lg">Lab Record Tracker</h1>
+         <p id="classTitle" class="mt-1 text-lg inline-block bg-slate-900/70 px-3 py-1 rounded-md text-slate-300">Managing: <span class="font-	   semibold text-white"></span></p>
+     </div>
+     <div class="flex flex-col items-center gap-2">
+       <span class="text-2xl font-extrabold text-white text-shadow bg-slate-900/70 px-3 py-1 rounded-md">RGUKT ONGOLE</span>
+       <span class="text-lg font-bold text-white text-shadow bg-slate-900/70 px-3 py-1 rounded-md tracking-widest">[MAAN]</span>
+   </div>
+   <div class="flex items-center gap-2 flex-wrap">
+        <button id="scanPayBtn" class="action-btn bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700">Scan to Pay</button>
+        <button id="logoutBtn" class="action-btn bg-slate-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-slate-700">Logout</button>
+   <button id="logoutClearBtn" class="action-btn bg-red-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-red-700">Logout & Clear</button>
+       </div>
+   </div>
+  </header>
+        
+        <section class="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 card p-6">
+                <h3 class="font-bold text-xl mb-4 text-slate-800">Dashboard</h3>
+                <div id="statsGrid" class="grid grid-cols-2 md:grid-cols-3 gap-4"></div>
+            </div>
+            <div class="card p-6">
+                <h3 class="font-bold text-xl mb-4 text-slate-800">Overall Progress</h3>
+                <div class="h-48 flex items-center justify-center"><canvas id="progressChart"></canvas></div>
+            </div>
+        </section>
+
+        <div class="card p-6 mt-8 mb-8">
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="space-y-4">
+                    <h3 class="font-bold text-xl text-slate-800">Import & Add</h3>
+                    <div class="space-y-2"><label class="block text-sm font-medium">Import from Excel (.xlsx, .csv)</label><input type="file" id="fileInput" class="w-full text-sm text-slate-500 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"><select id="columnSelect" class="w-full rounded-md border-slate-300 shadow-sm mt-2" disabled><option>Upload a file first</option></select><button id="importBtn" class="w-full mt-2 action-btn bg-violet-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-violet-700" disabled>Import Students</button></div>
+                    <div class="space-y-2"><label for="studentNameInput" class="text-sm font-medium">Add Single Student</label><input type="text" id="studentNameInput" placeholder="Enter name and press Enter" class="w-full rounded-md border-slate-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"><div id="addStudentError" class="text-red-500 text-xs mt-1"></div></div>
+                </div>
+                 <div class="space-y-4">
+                     <h3 class="font-bold text-xl text-slate-800">Settings & Danger Zone</h3>
+                     <div class="space-y-2"><label class="block text-sm font-medium">Upload UPI QR Code</label><div class="flex items-center gap-4"><input type="file" id="qrCodeUpload" accept="image/*" class="w-full text-sm text-slate-500 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"><img id="qrPreview" class="w-12 h-12 rounded-md object-cover hidden border"></div></div>
+                     <div class="space-y-2"><label class="block text-sm font-medium">Gemini API Key</label><div class="flex rounded-md shadow-sm"><input type="password" id="apiKeyInput" class="block w-full rounded-none rounded-l-md border-slate-300 focus:ring-indigo-500 focus:border-indigo-500"><button id="saveApiKeyBtn" class="relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-slate-300 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">Save</button></div></div>
+                     <div class="pt-4 space-y-2 border-t border-slate-200"><button id="manageLabsBtn" class="w-full action-btn bg-slate-800 text-white font-semibold px-4 py-2 rounded-lg hover:bg-slate-900">Manage Labs</button><button id="deleteAllBtn" class="w-full action-btn bg-red-800 text-white font-semibold px-4 py-2 rounded-lg hover:bg-red-900">Delete All Students</button></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6 mb-8">
+            <h3 class="font-bold text-xl mb-4 text-slate-800">Manage Student List</h3>
+            <div class="p-4 rounded-lg space-y-4">
+                <div><div class="flex flex-wrap gap-4 items-end"><div class="flex-grow"><label for="searchInput" class="text-sm font-medium text-slate-700">Search Students</label><input type="search" id="searchInput" placeholder="Search by name..." class="w-full mt-1 rounded-md border-slate-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"></div><div class="flex-shrink-0"><button id="downloadExcelBtn" class="w-full action-btn bg-green-700 text-white font-semibold px-4 py-2 rounded-lg hover:bg-green-800">Download List (Excel)</button></div></div></div>
+                <div><label class="text-sm font-medium text-slate-700">Filter by Status</label><div class="flex flex-wrap gap-2 mt-1" id="filterContainer"><button class="filter-btn active" data-filter="all">All</button><button class="filter-btn" data-filter="unpaid">Unpaid</button><button class="filter-btn" data-filter="paid">Paid</button><button class="filter-btn" data-filter="collected">Collected</button></div></div>
+                <div><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="duplicateToggle" class="sr-only peer"><div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div><span class="ml-3 text-sm font-medium text-slate-900">Show Duplicates Only</span></label></div>
+            </div>
+            <div class="pt-4 flex justify-end" id="bulkActionContainer" style="display: none;"><button id="deleteSelectedBtn" class="action-btn bg-red-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-red-700">Delete Selected</button></div>
+        </div>
+        
+        <div id="student-list-container" class="card overflow-x-auto"><div id="studentListHeader" class="grid bg-slate-50 p-4 font-semibold text-slate-600 border-b border-slate-200"></div><div id="studentList"><div id="emptyState" class="text-center p-12 text-slate-500"><p>No students have been added yet.</p></div></div></div>
+    </div>
+
+    <!-- Modals -->
+    <div id="labsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4 hidden modal-backdrop opacity-0"><div class="modal-content bg-white rounded-xl shadow-xl w-full max-w-lg mx-auto transform opacity-0 scale-95"><div class="p-6"><div class="flex justify-between items-start"><h3 class="text-xl font-bold text-slate-900">Manage Labs</h3><button class="modal-close icon-btn rounded-full p-1">&times;</button></div><div class="mt-4 space-y-4"><div id="labsList" class="space-y-2"></div><div class="pt-4 border-t"><h4 class="font-semibold mb-2">Add New Lab</h4><div class="flex gap-2"><input type="text" id="newLabName" placeholder="Lab Name" class="w-full rounded-md border-slate-300 focus:ring-indigo-500 focus:border-indigo-500"><input type="number" id="newLabPrice" placeholder="Price (₹)" class="w-32 rounded-md border-slate-300 focus:ring-indigo-500 focus:border-indigo-500"><button id="addLabBtn" class="action-btn bg-green-600 text-white font-semibold px-4 rounded-lg hover:bg-green-700">Add</button></div></div></div></div><div class="bg-slate-50 p-4 rounded-b-xl flex justify-end"><button class="modal-close action-btn bg-slate-800 text-white font-semibold px-4 py-2 rounded-lg hover:bg-slate-900">Done</button></div></div></div>
+    <div id="noteModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4 hidden modal-backdrop opacity-0"><div class="modal-content bg-white rounded-xl shadow-xl w-full max-w-lg mx-auto transform opacity-0 scale-95"><div class="p-6"><div class="flex justify-between items-start"><h3 id="noteModalTitle" class="text-xl font-bold text-slate-900"></h3><button class="modal-close icon-btn rounded-full p-1">&times;</button></div><div class="mt-4"><textarea id="noteTextarea" class="w-full h-32 rounded-md border-slate-300 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Add a note..."></textarea></div></div><div class="bg-slate-50 p-4 rounded-b-xl flex justify-end gap-2"><button id="saveNoteBtn" class="action-btn bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700">Save Note</button><button class="modal-close action-btn bg-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-lg hover:bg-slate-300">Cancel</button></div></div></div>
+    <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center p-4 hidden modal-backdrop opacity-0"><div class="modal-content bg-white rounded-xl shadow-xl w-full max-w-sm mx-auto transform opacity-0 scale-95"><div class="p-6"><div class="flex justify-between items-start"><h3 class="text-xl font-bold text-slate-900">Scan UPI QR Code</h3><button class="modal-close icon-btn rounded-full p-1">&times;</button></div><div id="qrCodeContainer" class="mt-4 flex justify-center bg-slate-100 p-4 rounded-lg"></div></div><div class="bg-slate-50 p-4 rounded-b-xl flex justify-end gap-2"><button class="modal-close action-btn bg-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-lg hover:bg-slate-300">Close</button></div></div></div>
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 ease-in-out z-50"><p id="toastMessage"></p></div>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- SCRIPT FOR CR TOOL ---
+        let appState = { students: [], labs: [], className: '', geminiApiKey: '', qrCodeData: null };
+        let fileData = [];
+        let currentFilter = 'all';
+        let showDuplicatesOnly = false;
+        let selectedStudentIds = new Set();
+        let chartInstance = null;
+        let currentNoteStudentId = null;
+
+        const statusCycle = ['unpaid', 'paid', 'collected'];
+        const statusStyles = { unpaid: 'bg-red-100 text-red-800 border-red-200', paid: 'bg-yellow-100 text-yellow-800 border-yellow-200', collected: 'bg-green-100 text-green-800 border-green-200' };
+
+        const DOMElements = {
+            authContainer: document.getElementById('authContainer'), mainApp: document.getElementById('mainApp'),
+            classFileInput: document.getElementById('classFileInput'),
+            classTitle: document.getElementById('classTitle').querySelector('span'),
+            logoutBtn: document.getElementById('logoutBtn'), logoutClearBtn: document.getElementById('logoutClearBtn'),
+            exportDataBtn: document.getElementById('downloadExcelBtn'),
+            apiKeyInput: document.getElementById('apiKeyInput'), saveApiKeyBtn: document.getElementById('saveApiKeyBtn'),
+            manageLabsBtn: document.getElementById('manageLabsBtn'), summarizeBtn: document.getElementById('summarizeBtn'),
+            statsGrid: document.getElementById('statsGrid'), fileInput: document.getElementById('fileInput'),
+            columnSelect: document.getElementById('columnSelect'), importBtn: document.getElementById('importBtn'),
+            studentNameInput: document.getElementById('studentNameInput'), addStudentError: document.getElementById('addStudentError'),
+            searchInput: document.getElementById('searchInput'), deleteAllBtn: document.getElementById('deleteAllBtn'),
+            studentListHeader: document.getElementById('studentListHeader'), studentList: document.getElementById('studentList'),
+            emptyState: document.getElementById('emptyState'), labsModal: document.getElementById('labsModal'),
+            labsList: document.getElementById('labsList'), newLabName: document.getElementById('newLabName'),
+            newLabPrice: document.getElementById('newLabPrice'), addLabBtn: document.getElementById('addLabBtn'),
+            progressChart: document.getElementById('progressChart'),
+            filterContainer: document.getElementById('filterContainer'), duplicateToggle: document.getElementById('duplicateToggle'),
+            bulkActionContainer: document.getElementById('bulkActionContainer'), deleteSelectedBtn: document.getElementById('deleteSelectedBtn'),
+            noteModal: document.getElementById('noteModal'), noteModalTitle: document.getElementById('noteModalTitle'), noteTextarea: document.getElementById('noteTextarea'), saveNoteBtn: document.getElementById('saveNoteBtn'),
+            qrCodeUpload: document.getElementById('qrCodeUpload'), qrPreview: document.getElementById('qrPreview'), qrModal: document.getElementById('qrModal'), qrCodeContainer: document.getElementById('qrCodeContainer'), scanPayBtn: document.getElementById('scanPayBtn'),
+        };
+
+        const generateUniqueId = (prefix) => `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+        const cryptoUtils = {
+            getKey: (p, s) => crypto.subtle.importKey('raw', new TextEncoder().encode(p), 'PBKDF2', !1, ['deriveKey']),
+            deriveKey: (k, s) => crypto.subtle.deriveKey({ name: 'PBKDF2', salt: s, iterations: 1e5, hash: 'SHA-256' }, k, { name: 'AES-GCM', length: 256 }, !0, ['encrypt', 'decrypt']),
+            encrypt: async (d, p) => { const s = crypto.getRandomValues(new Uint8Array(16)), i = crypto.getRandomValues(new Uint8Array(12)), k = await cryptoUtils.getKey(p, s).then(m => cryptoUtils.deriveKey(m, s)), e = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: i }, k, new TextEncoder().encode(JSON.stringify(d))); return btoa(String.fromCharCode.apply(null, new Uint8Array([...s, ...i, ...new Uint8Array(e)]))) },
+            decrypt: async (b, p) => { const a = Uint8Array.from(atob(b), c => c.charCodeAt(0)), s = a.slice(0, 16), i = a.slice(16, 28), d = a.slice(28), k = await cryptoUtils.getKey(p, s).then(m => cryptoUtils.deriveKey(m, s)); return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: i }, k, d))) }
+        };
+
+        const saveState = () => { try { localStorage.setItem('classData', JSON.stringify(appState)); } catch (e) { showToast("Error: Could not save data."); }};
+        const loadState = () => { const d = localStorage.getItem('classData'); if(d) { appState = JSON.parse(d); return true; } return false; };
+        const clearState = () => { localStorage.removeItem('classData'); localStorage.removeItem('isLoggedIn'); window.location.reload(); };
+        const showToast = (m) => { const t = document.getElementById('toast'); t.querySelector('p').textContent = m; t.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 3e3); };
+        const openModal = (m) => { m.classList.remove('hidden'); setTimeout(() => { m.classList.remove('opacity-0'); m.querySelector('.modal-content').classList.remove('opacity-0', 'scale-95'); }, 10); };
+        const closeModal = (m) => { m.querySelector('.modal-content').classList.add('opacity-0', 'scale-95'); m.classList.add('opacity-0'); setTimeout(() => m.classList.add('hidden'), 300); };
+
+        const showApp = () => {
+            localStorage.setItem('isLoggedIn', 'true');
+            DOMElements.authContainer.style.display = 'none';
+            DOMElements.mainApp.style.display = 'block';
+            DOMElements.classTitle.textContent = appState.className;
+            DOMElements.apiKeyInput.value = appState.geminiApiKey || '';
+            if(appState.qrCodeData) { DOMElements.qrPreview.src = appState.qrCodeData; DOMElements.qrPreview.classList.remove('hidden'); }
+            renderAll();
+        };
+
+        const getFilteredStudents = () => {
+            let studentsToRender = [...appState.students];
+            if (showDuplicatesOnly) {
+                const nameCounts = studentsToRender.reduce((acc, s) => { acc[s.name.toLowerCase()] = (acc[s.name.toLowerCase()] || 0) + 1; return acc; }, {});
+                const duplicateNames = Object.keys(nameCounts).filter(name => nameCounts[name] > 1);
+                studentsToRender = studentsToRender.filter(s => duplicateNames.includes(s.name.toLowerCase()));
+            } else if (currentFilter !== 'all') {
+                studentsToRender = studentsToRender.filter(student => {
+                    const statuses = Object.values(student.statuses);
+                    if (currentFilter === 'paid') return statuses.some(s => s === 'paid' || s === 'collected');
+                    return statuses.some(s => s === currentFilter);
+                });
+            }
+            return studentsToRender.filter(s => s.name.toLowerCase().includes(DOMElements.searchInput.value.toLowerCase()));
+        };
+        
+        const renderAll = () => { detectDuplicates(); renderDashboard(); renderStudentList(getFilteredStudents()); renderChart(); updateBulkActionUI(); };
+        const renderDashboard = () => {
+            DOMElements.statsGrid.innerHTML = ''; const totalStudents = appState.students.length;
+            appState.labs.forEach(lab => {
+                let paidCount = 0; let collectedCount = 0;
+                appState.students.forEach(student => {
+                    const status = student.statuses[lab.id];
+                    if (status === 'paid') paidCount++; if (status === 'collected') collectedCount++;
+                });
+                DOMElements.statsGrid.innerHTML += `<div class="card p-3"><p class="text-sm font-semibold text-slate-600">${lab.name}</p><div class="text-xs mt-2 space-y-1"><p>Paid: <span class="font-bold text-yellow-600">${paidCount}/${totalStudents}</span></p><p>Collected: <span class="font-bold text-green-600">${collectedCount}/${totalStudents}</span></p></div></div>`;
+            });
+            DOMElements.scanPayBtn.style.display = appState.qrCodeData ? 'flex' : 'none';
+        };
+        const renderStudentList = (studentsToRender) => {
+            DOMElements.studentList.innerHTML = '';
+            const headerCols = ['40px', '3fr', ...appState.labs.map(() => '1fr'), '1fr'];
+            const header = document.getElementById('studentListHeader');
+            header.style.gridTemplateColumns = headerCols.join(' ');
+            const allVisibleSelected = studentsToRender.length > 0 && studentsToRender.every(s => selectedStudentIds.has(s.id));
+            header.innerHTML = `<div class="flex justify-center items-center"><input type="checkbox" id="selectAllCheckbox" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" ${allVisibleSelected ? 'checked' : ''}></div><div class="font-semibold pl-2 text-slate-600">Student Name</div>` + appState.labs.map(l => `<div class="text-center font-semibold text-slate-600">${l.name}</div>`).join('') + `<div class="text-center font-semibold text-slate-600">Actions</div>`;
+            
+            DOMElements.emptyState.style.display = studentsToRender.length === 0 ? 'block' : 'none';
+
+            studentsToRender.forEach(student => {
+                const row = document.createElement('div');
+                row.className = `grid p-4 border-b border-slate-200 items-center hover:bg-slate-50 ${student.isDuplicate ? 'duplicate-row' : ''}`;
+                row.style.gridTemplateColumns = headerCols.join(' ');
+                const isSelected = selectedStudentIds.has(student.id);
+                const statusHtml = appState.labs.map(lab => `<div class="text-center"><button class="status-btn w-20 text-xs font-bold py-1 px-2 rounded-full ${statusStyles[student.statuses[lab.id] || 'unpaid']}" data-id="${student.id}" data-lab-id="${lab.id}">${student.statuses[lab.id] || 'unpaid'}</button></div>`).join('');
+                row.innerHTML = `<div class="flex justify-center items-center"><input type="checkbox" class="student-checkbox h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" data-id="${student.id}" ${isSelected ? 'checked' : ''}></div><div class="font-medium text-slate-900 pl-2">${student.name}</div>${statusHtml}<div class="text-center flex justify-center items-center gap-2"><button class="note-btn icon-btn p-1 rounded-full" data-id="${student.id}" title="Notes">${student.notes ? '📝' : '🗒️'}</button><button class="delete-student-btn icon-btn text-red-500 font-bold p-1 rounded-full" data-id="${student.id}" title="Delete Student">&times;</button></div>`;
+                DOMElements.studentList.appendChild(row);
+            });
+            document.getElementById('selectAllCheckbox').addEventListener('change', handleSelectAll);
+        };
+        const renderChart = () => {
+            const ctx = DOMElements.progressChart.getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            if (!appState.students.length || !appState.labs.length) {
+                 ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); ctx.font="16px Inter"; ctx.fillStyle="#64748b"; ctx.textAlign="center"; ctx.fillText("No data", ctx.canvas.width/2, ctx.canvas.height/2); return;
+            }
+            const counts = { unpaid: 0, paid: 0, collected: 0 };
+            appState.students.forEach(s => { Object.values(s.statuses).forEach(status => { if(counts[status] !== undefined) counts[status]++; }); });
+            chartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Unpaid', 'Paid', 'Collected'], datasets: [{ data: [counts.unpaid, counts.paid, counts.collected], backgroundColor: ['#fca5a5', '#fde047', '#86efac'], borderColor: ['#fff'], borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' }}}});
+        };
+        const detectDuplicates = () => { const c=appState.students.reduce((a,s)=>{a[s.name.toLowerCase()]=(a[s.name.toLowerCase()]||0)+1;return a;},{}); appState.students.forEach(s=>s.isDuplicate=c[s.name.toLowerCase()]>1); };
+        const updateBulkActionUI = () => { DOMElements.bulkActionContainer.style.display = selectedStudentIds.size > 0 ? 'flex' : 'none'; };
+        const renderLabsManagement = () => {
+            DOMElements.labsList.innerHTML = '';
+            appState.labs.forEach(lab => {
+                const labItem = document.createElement('div');
+                labItem.className = 'flex items-center gap-2 p-2 rounded-md bg-slate-100';
+                labItem.innerHTML = `<input type="text" value="${lab.name}" data-id="${lab.id}" data-field="name" class="lab-edit-input w-full rounded-md border-slate-300 focus:ring-indigo-500 focus:border-indigo-500"><input type="number" value="${lab.price}" data-id="${lab.id}" data-field="price" class="lab-edit-input w-32 rounded-md border-slate-300 focus:ring-indigo-500 focus:border-indigo-500"><button class="delete-lab-btn icon-btn text-red-500 font-bold p-1 rounded-full" data-id="${lab.id}" title="Delete Lab">&times;</button>`;
+                DOMElements.labsList.appendChild(labItem);
+            });
+        };
+        const handleFileLoad = async (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const password = prompt(`Enter password for "${file.name}":`);
+                if (!password) { e.target.value = ''; return; }
+                try {
+                    const decryptedDataFromFile = await cryptoUtils.decrypt(JSON.parse(event.target.result).data, password);
+                    const existingDataRaw = localStorage.getItem('classData');
+                    
+                    if (existingDataRaw) {
+                        const existingData = JSON.parse(existingDataRaw);
+                        if (existingData.className === decryptedDataFromFile.className) {
+                            appState = existingData;
+                            showToast(`Resuming session for ${appState.className}.`);
+                            showApp();
+                            return;
+                        }
+                    }
+                    
+                    appState = decryptedDataFromFile;
+                    saveState();
+                    showApp();
+                } catch (err) { alert("Decryption failed. Incorrect password or corrupted file."); e.target.value = ''; console.error(err); }
+            };
+            reader.readAsText(file);
+        };
+        const handleExportData = () => {
+            const studentsToExport = getFilteredStudents();
+            if (studentsToExport.length === 0) { showToast("No students to export in current view."); return; }
+            const data = studentsToExport.map(s => { const r = { 'Student Name': s.name }; appState.labs.forEach(l => { r[l.name] = s.statuses[l.id] || 'unpaid'; }); return r; });
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Student Status");
+            XLSX.writeFile(wb, `${appState.className}_export_${currentFilter}.xlsx`);
+        };
+        const handleAddStudent = (name) => {
+            const studentName = (typeof name === 'string' ? name : DOMElements.studentNameInput.value).trim();
+            DOMElements.addStudentError.textContent = '';
+            if (appState.students.some(s => s.name.toLowerCase() === studentName.toLowerCase())) { DOMElements.addStudentError.textContent = 'This student name already exists.'; return false; }
+            if (studentName) {
+                const newStudent = { id: generateUniqueId('s'), name: studentName, statuses: {}, notes: '', isDuplicate: false };
+                appState.labs.forEach(lab => newStudent.statuses[lab.id] = 'unpaid');
+                appState.students.push(newStudent);
+                return true;
+            }
+            return false;
+        };
+        const handleFileSelect = (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const workbook = XLSX.read(event.target.result, { type: 'binary' });
+                    fileData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+                    if (fileData.length > 0) {
+                        DOMElements.columnSelect.innerHTML = fileData[0].map(h => `<option value="${h}">${h}</option>`).join('');
+                        DOMElements.columnSelect.disabled = false; DOMElements.importBtn.disabled = false;
+                    }
+                } catch (err) { alert("Error reading file."); }
+            };
+            reader.readAsBinaryString(file);
+        };
+        const handleImport = () => {
+            if (fileData.length < 2) return;
+            const headers = fileData[0], selectedColumn = DOMElements.columnSelect.value, colIdx = headers.indexOf(selectedColumn);
+            let importedCount = 0;
+            for (let i = 1; i < fileData.length; i++) {
+                const row = fileData[i];
+                if (row && row.length > colIdx) {
+                    const name = String(row[colIdx] || '').trim();
+                    if (name) {
+                         const newStudent = { id: generateUniqueId('s'), name, statuses: {}, notes: '', isDuplicate: false };
+                         appState.labs.forEach(l => newStudent.statuses[l.id] = 'unpaid');
+                         appState.students.push(newStudent);
+                         importedCount++;
+                    }
+                }
+            }
+            if(importedCount > 0) { saveState(); renderAll(); showToast(`${importedCount} student(s) imported.`); }
+        };
+        const handleSelectAll = (e) => {
+            const isChecked = e.target.checked;
+            getFilteredStudents().forEach(s => { if(isChecked) selectedStudentIds.add(s.id); else selectedStudentIds.delete(s.id); });
+            renderAll();
+        };
+
+        // --- EVENT LISTENERS ---
+        DOMElements.classFileInput.addEventListener('change', handleFileLoad);
+        DOMElements.logoutBtn.addEventListener('click', () => { localStorage.removeItem('isLoggedIn'); window.location.reload(); });
+        DOMElements.logoutClearBtn.addEventListener('click', () => { if(confirm("Are you sure? This will permanently clear all data from this browser.")) clearState()});
+        DOMElements.exportDataBtn.addEventListener('click', handleExportData);
+        DOMElements.saveApiKeyBtn.addEventListener('click', () => { appState.geminiApiKey = DOMElements.apiKeyInput.value.trim(); saveState(); showToast('API Key saved!'); });
+        DOMElements.studentNameInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') { if(handleAddStudent(e.target.value)) { e.target.value = ''; saveState(); renderAll(); }} });
+        DOMElements.searchInput.addEventListener('input', () => renderAll());
+        DOMElements.fileInput.addEventListener('change', handleFileSelect);
+        DOMElements.importBtn.addEventListener('click', handleImport);
+        DOMElements.deleteAllBtn.addEventListener('click', () => { if(confirm('Delete ALL students?')) { appState.students = []; selectedStudentIds.clear(); saveState(); renderAll(); }});
+        DOMElements.manageLabsBtn.addEventListener('click', () => { renderLabsManagement(); openModal(DOMElements.labsModal); });
+        DOMElements.filterContainer.addEventListener('click', (e) => { if(e.target.classList.contains('filter-btn')){ currentFilter = e.target.dataset.filter; DOMElements.filterContainer.querySelectorAll('button').forEach(b => b.classList.remove('active')); e.target.classList.add('active'); renderAll(); } });
+        DOMElements.duplicateToggle.addEventListener('change', (e) => { showDuplicatesOnly = e.target.checked; renderAll(); });
+        DOMElements.deleteSelectedBtn.addEventListener('click', () => { if(confirm(`Delete ${selectedStudentIds.size} selected students?`)) { appState.students = appState.students.filter(s => !selectedStudentIds.has(s.id)); selectedStudentIds.clear(); saveState(); renderAll(); }});
+        DOMElements.qrCodeUpload.addEventListener('change', (e) => { const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = (re) => { appState.qrCodeData = re.target.result; saveState(); showToast('QR Code updated!'); DOMElements.qrPreview.src = re.target.result; DOMElements.qrPreview.classList.remove('hidden'); renderDashboard(); }; reader.readAsDataURL(file); }});
+        DOMElements.scanPayBtn.addEventListener('click', () => { if(appState.qrCodeData) { DOMElements.qrCodeContainer.innerHTML = `<img src="${appState.qrCodeData}" alt="UPI QR Code" class="w-full h-auto rounded-lg">`; openModal(DOMElements.qrModal); }});
+        DOMElements.studentList.addEventListener('click', (e) => {
+            const target = e.target; const studentId = target.closest('[data-id]')?.dataset.id; if (!studentId) return;
+            if (target.classList.contains('status-btn')) {
+                const labId = target.dataset.labId, student = appState.students.find(s => s.id === studentId);
+                const currentStatus = student.statuses[labId] || 'unpaid', currentIndex = statusCycle.indexOf(currentStatus);
+                student.statuses[labId] = statusCycle[(currentIndex + 1) % statusCycle.length];
+            } else if (target.classList.contains('delete-student-btn')) { appState.students = appState.students.filter(s => s.id !== studentId);
+            } else if (target.classList.contains('note-btn')) {
+                currentNoteStudentId = studentId; const student = appState.students.find(s => s.id === studentId);
+                DOMElements.noteModalTitle.textContent = `Notes for ${student.name}`; DOMElements.noteTextarea.value = student.notes || ''; openModal(DOMElements.noteModal);
+            } else if (target.classList.contains('student-checkbox')) { if (target.checked) selectedStudentIds.add(studentId); else selectedStudentIds.delete(studentId); updateBulkActionUI(); const allVisibleSelected = getFilteredStudents().length > 0 && getFilteredStudents().every(s => selectedStudentIds.has(s.id)); document.getElementById('selectAllCheckbox').checked = allVisibleSelected; return; }
+            saveState(); renderAll();
+        });
+        DOMElements.saveNoteBtn.addEventListener('click', () => { const s = appState.students.find(s => s.id === currentNoteStudentId); if(s) { s.notes = DOMElements.noteTextarea.value.trim(); saveState(); renderAll(); } closeModal(DOMElements.noteModal); });
+        document.querySelectorAll('.modal-close').forEach(el => el.addEventListener('click', (e) => { const m = e.target.closest('.modal-backdrop'); if(m) { closeModal(m); if(m.id==='labsModal'){renderAll(); showToast('Labs updated.');}}}));
+        DOMElements.labsList.addEventListener('change', (e) => { if(e.target.classList.contains('lab-edit-input')) { const l = appState.labs.find(lab => lab.id === e.target.dataset.id); if(l) { l[e.target.dataset.field] = e.target.dataset.field === 'price' ? parseFloat(e.target.value) : e.target.value; saveState(); } }});
+        DOMElements.labsList.addEventListener('click', (e) => { const b = e.target.closest('.delete-lab-btn'); if(b) { const id = b.dataset.id; appState.labs=appState.labs.filter(l=>l.id!==id); appState.students.forEach(s=>delete s.statuses[id]); saveState(); renderLabsManagement(); }});
+        DOMElements.addLabBtn.addEventListener('click', () => { const n=DOMElements.newLabName.value.trim(),p=parseFloat(DOMElements.newLabPrice.value); if(n&&p>=0){ const l={id:generateUniqueId('lab'),name:n,price:p}; appState.labs.push(l); appState.students.forEach(s=>s.statuses[l.id]='unpaid'); saveState(); renderLabsManagement(); DOMElements.newLabName.value=''; DOMElements.newLabPrice.value=''; }});
+        
+        // INITIALIZATION
+        if (localStorage.getItem('isLoggedIn') === 'true' && loadState()) { showApp(); } 
+        else { DOMElements.authContainer.style.display = 'flex'; }
+    });
+    </script>
+</body>
+</html>
+
+
